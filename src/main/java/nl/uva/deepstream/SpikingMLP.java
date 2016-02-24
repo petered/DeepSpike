@@ -31,15 +31,15 @@ interface EventModule<EventType> extends Resettable{
 @FunctionalInterface
 interface EventHandler{
 
-    <EventType extends BaseEvent> void handle_event(EventType ev, EventModule<EventType> src_module);
+    <EventType> void handle_event(EventType ev, EventModule<EventType> src_module);
 
 }
 
 interface Router extends EventHandler, Resettable{
 
-    <EventType extends BaseEvent> void add_binding(EventModule<EventType> src_module, Consumer<EventType> method_reference);
+    <EventType> void add_binding(EventModule<EventType> src_module, Consumer<EventType> method_reference);
 
-    <EventType extends BaseEvent> void handle_event(EventType ev, Consumer<EventType> consumer);
+    <EventType> void handle_event(EventType ev, Consumer<EventType> consumer);
 
 }
 
@@ -52,7 +52,7 @@ abstract class AccessibleRouter implements Router{
         name_src_map = new HashMap();
     }
 
-    public <EventType extends BaseEvent> void add_binding(EventModule<EventType> src_module, Consumer<EventType> method_reference, String src_name){
+    public <EventType> void add_binding(EventModule<EventType> src_module, Consumer<EventType> method_reference, String src_name){
         assert (!name_src_map.containsKey(src_name)) || src_module!=name_src_map.get(src_name): "You already added a different module named '"+src_name+"'";
         name_src_map.put(src_name, src_module);
         add_binding(src_module, method_reference);
@@ -349,7 +349,7 @@ class GlobalClock {
 }
 
 
-abstract class BaseEventModule<EventType extends BaseEvent> implements EventModule<EventType> {
+abstract class BaseEventModule<EventType> implements EventModule<EventType> {
 
     EventHandler event_handler;
 
@@ -390,7 +390,7 @@ abstract class BaseEventModule<EventType extends BaseEvent> implements EventModu
 }
 
 
-abstract class StatelessBaseEventModule<EventType extends BaseEvent> extends BaseEventModule<EventType>{
+abstract class StatelessBaseEventModule<EventType> extends BaseEventModule<EventType>{
     /* Started this because of bugs caused by forgetting to reset.  Now you have to explicitly not reset */
 
     @Override
@@ -400,7 +400,7 @@ abstract class StatelessBaseEventModule<EventType extends BaseEvent> extends Bas
 }
 
 
-class IdentityModule<EventType extends BaseEvent> extends StatelessBaseEventModule<EventType>{
+class IdentityModule<EventType> extends StatelessBaseEventModule<EventType>{
     // Why?  Useful as an input node, where you may want to distribute an input signal
     // to multiple nodes.  Distributing the input to the appropriate nodes in the
     // graph is then the concern of the graph-builder, rather than the input-feeder,
@@ -520,7 +520,7 @@ class QuantizerFactory{
 }
 
 
-abstract class BaseHerder<EventType extends BaseEvent> extends BaseEventModule<EventType>{
+abstract class BaseHerder<EventType> extends BaseEventModule<EventType>{
 
     IVector phi;
 
@@ -826,7 +826,7 @@ class PoissonHerder extends BaseQueueHerder{
 }
 
 
-abstract class BaseArgmaxHerder<EventType extends BaseEvent> extends BaseHerder<EventType>{
+abstract class BaseArgmaxHerder<EventType> extends BaseHerder<EventType>{
 
     public BaseArgmaxHerder(int n_units) {
         super(n_units);
@@ -954,7 +954,7 @@ class CountModule extends BaseEventModule<SignedSpikeEvent>{
 }
 
 
-interface WeightGradientModule<EventType extends BaseEvent> extends EventModule<EventType>{
+interface WeightGradientModule<EventType> extends EventModule<EventType>{
 
     void feed_error_event(SignedSpikeEvent event);
 
@@ -1219,17 +1219,7 @@ class VectorThresholdModule extends StatelessBaseEventModule<BooleanVectorEvent>
 }
 
 
-class BaseEvent{
-
-    public final int time;
-
-    BaseEvent() {
-        this.time = GlobalClock.time;
-    }
-}
-
-
-class BaseSpikeEvent extends BaseEvent{
+class BaseSpikeEvent{
 
     public final int src;
 
@@ -1272,7 +1262,7 @@ class WeightedSpikeEvent extends BaseSpikeEvent{
     }
 }
 
-class VectorEvent extends BaseEvent{
+class VectorEvent{
 
     final public IVector vec;
 
@@ -1287,7 +1277,7 @@ class VectorEvent extends BaseEvent{
 
 }
 
-class BooleanVectorEvent extends BaseEvent{
+class BooleanVectorEvent{
 
     final public BooleanVector vec;
 
@@ -1302,7 +1292,7 @@ class BooleanVectorEvent extends BaseEvent{
 }
 
 
-class MatrixEvent extends BaseEvent{
+class MatrixEvent{
 
     final public IMatrix matrix;
 
@@ -1312,7 +1302,7 @@ class MatrixEvent extends BaseEvent{
 }
 
 
-class ColumnChangeEvent extends BaseEvent{
+class ColumnChangeEvent{
     /*An event which sends a change in value to a row at a given index.*/
 
     public int col_ix;
@@ -1340,7 +1330,7 @@ class SwitchBoard implements EventHandler{
     }
 
     @Override
-    public <EventType extends BaseEvent> void handle_event(EventType ev, EventModule<EventType> src_module) {
+    public <EventType> void handle_event(EventType ev, EventModule<EventType> src_module) {
         current_handler.handle_event(ev, src_module);
     }
 }
@@ -1374,7 +1364,7 @@ class DepthRouter extends AccessibleRouter{
     }
 
     @Override
-    public <EventType extends BaseEvent> void add_binding(EventModule<EventType> src_module, Consumer<EventType> method_reference) {
+    public <EventType> void add_binding(EventModule<EventType> src_module, Consumer<EventType> method_reference) {
         assert src_module != null: "You tried to add a null pointer, fool.";
         if (!src_to_consumers.containsKey(src_module)){
             src_to_consumers.put(src_module, new ArrayList());
@@ -1384,12 +1374,12 @@ class DepthRouter extends AccessibleRouter{
     }
 
     @Override
-    public <EventType extends BaseEvent> void handle_event(EventType ev, Consumer<EventType> consumer) {
+    public <EventType> void handle_event(EventType ev, Consumer<EventType> consumer) {
         consumer.accept(ev);
     }
 
     @Override
-    public <EventType extends BaseEvent> void handle_event(EventType ev, EventModule<EventType> src_module) {
+    public <EventType> void handle_event(EventType ev, EventModule<EventType> src_module) {
         src_to_consumers.get(src_module).stream().forEach(consumer -> consumer.accept(ev));
     }
 
@@ -1447,7 +1437,7 @@ class BreadthRouter extends AccessibleRouter{
         System.out.println("===================================");
     }
 
-    class ModuleLinks<EventType extends BaseEvent>{
+    class ModuleLinks<EventType>{
         // Contains the object linked to a module (an output queue and a list of consumer)
         List<EventType> queue;
         EventModule<EventType> src;
@@ -1466,7 +1456,7 @@ class BreadthRouter extends AccessibleRouter{
     }
 
     @Override
-    public <EventType extends BaseEvent> void add_binding(EventModule<EventType> src_module, Consumer<EventType> method_reference) {
+    public <EventType> void add_binding(EventModule<EventType> src_module, Consumer<EventType> method_reference) {
         assert src_module != null: "You tried to add a null pointer, fool.";
         if (!src_to_links.containsKey(src_module))
             src_to_links.put(src_module, new ModuleLinks(src_module));
@@ -1475,14 +1465,14 @@ class BreadthRouter extends AccessibleRouter{
     }
 
     @Override
-    public <EventType extends BaseEvent> void handle_event(EventType ev, Consumer<EventType> consumer) {
+    public <EventType> void handle_event(EventType ev, Consumer<EventType> consumer) {
         work_in_progress = true;
         consumer.accept(ev);
         process_head_queue();
         work_in_progress = false;
     }
 
-    private <EventType extends BaseEvent> void process_head_queue(){
+    private <EventType> void process_head_queue(){
         ModuleLinks<EventType> links = src_deque.pollLast();
         if (links == null)
             return;
@@ -1492,7 +1482,7 @@ class BreadthRouter extends AccessibleRouter{
     }
 
     @Override
-    public <EventType extends BaseEvent> void handle_event(EventType ev, EventModule<EventType> src_module) {
+    public <EventType> void handle_event(EventType ev, EventModule<EventType> src_module) {
         /* Here's how we do it:
 
         We have a FIFO queue of src_modules to process.  When a src_module fires
@@ -1533,7 +1523,7 @@ abstract class BaseEavesdropper implements EventHandler{
     }
 
     @Override
-    public <EventType extends BaseEvent> void handle_event(EventType ev, EventModule<EventType> src_module) {
+    public <EventType> void handle_event(EventType ev, EventModule<EventType> src_module) {
 
         if (enabled){
             eat_event(ev, src_module);
@@ -1542,7 +1532,7 @@ abstract class BaseEavesdropper implements EventHandler{
             current_handler.handle_event(ev, src_module);
     }
 
-    public abstract <EventType extends BaseEvent> void eat_event(EventType ev, EventModule<EventType> src_module);
+    public abstract <EventType> void eat_event(EventType ev, EventModule<EventType> src_module);
 
     public void set_enabled(boolean enabled){
         this.enabled = enabled;
@@ -1580,7 +1570,7 @@ class Eavesdropper extends BaseEavesdropper{
     }
 
     @Override
-    public <EventType extends BaseEvent> void eat_event(EventType ev, EventModule<EventType> src_module) {
+    public <EventType> void eat_event(EventType ev, EventModule<EventType> src_module) {
         if (ev instanceof VectorEvent) // HACK!!!  It's needed to make sure recorded events don't change when the weights they're referencing do.
             record.add(new VectorEvent(((VectorEvent)ev).vec, false));
         else
@@ -1598,7 +1588,7 @@ class SpikeCountingEavesdropper extends BaseEavesdropper{
     }
 
     @Override
-    public <EventType extends BaseEvent> void eat_event(EventType ev, EventModule<EventType> src_module) {
+    public <EventType> void eat_event(EventType ev, EventModule<EventType> src_module) {
         count += 1;
     }
 
