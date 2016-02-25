@@ -1,13 +1,5 @@
 
 from setuptools import setup
-import imp
-import os
-
-THIS_DIR = os.path.dirname(os.path.realpath(__file__))
-
-foo = imp.load_source('deepstream', THIS_DIR+'/src/main/python/deepstream/deepstream_python_directory.py')
-foo.MyClass()
-
 
 setup(name='DeepStream',
       author='Peter',
