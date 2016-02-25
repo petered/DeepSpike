@@ -1,7 +1,7 @@
 
 from setuptools import setup
-
 import imp
+import os
 
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
 
