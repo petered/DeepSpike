@@ -8,5 +8,5 @@ setup(name='DeepStream',
       url='https://github.com/petered/deepstream',
       long_description='A Java library for Spiking Neural Networks',
       version=0,
-      packages=['DeepStream'],
+      packages=[],
       scripts=[])
