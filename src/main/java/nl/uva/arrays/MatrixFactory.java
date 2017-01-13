@@ -1,7 +1,5 @@
 package nl.uva.arrays;
 
-import sun.plugin2.message.Conversation;
-
 /**
  * Created by peter on 2/22/16.
  */
@@ -26,17 +24,6 @@ public class MatrixFactory {
     public static float get_scale(){
         return scale;
     }
-//
-//    public static IVector create(int length){
-//
-//        switch (dtype) {
-//            case DOUBLE:
-//                return new DoubleVector(length);
-//            default:
-//                throw new UnsupportedOperationException("No method for creatoing "+dtype+" arrays yet.");
-//        }
-//    }
-
 
     public static IMatrix create(float[][] data){
 
@@ -51,18 +38,5 @@ public class MatrixFactory {
                 throw new UnsupportedOperationException("No method for creatoing "+dtype+" arrays yet.");
         }
     }
-
-//    public static IMatrix create(double[][] data){
-//
-//        switch (dtype) {
-//            case DOUBLE:
-//                return new DoubleMatrix(data);
-//            case FLOAT:
-//                return new FloatMatrix(PrimativeArrayConverters.double2float(data));
-//            case
-//            default:
-//                throw new UnsupportedOperationException("No method for creatoing "+dtype+" arrays yet.");
-//        }
-//    }
 
 }
